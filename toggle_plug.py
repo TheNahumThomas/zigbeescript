@@ -9,6 +9,8 @@ BROKER = "localhost"
 PORT = 1883
 DEVICE_ID = "plug"
 TOPIC = f"zigbee2mqtt/{DEVICE_ID}/set"
+times_cycled = 0
+
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -80,6 +82,7 @@ while True:
     try:
         requests.get("https://www.google.com", timeout=5)
         print("Internet Connection OK")
+        times_cycled = 0
         time.sleep(20)
 
     except requests.ConnectionError:
@@ -91,23 +94,21 @@ while True:
             time.sleep(5)
             continue
 
-        pc_alive = ping_ip("192.168.1.186")
-        
+
         router_alive = ping_ip("192.168.1.1")
 
         if router_alive:
             print("Router is reachable but internet is down. ISP Issue likely.")
             time.sleep(60)
-        elif pc_alive:
-            print("Router unreachable, BUT PC is visible. Local network is up.")
-            print("Skipping reboot to prevent disruption.")
-            time.sleep(60)
+        elif times_cycled > 2:
+            print("Power Cycles Don't Seem To Be Solving The Problem. Waiting for 15 Minutes Before Retrying")
+            time.sleep(900)
         else:
             print("Router Unreachable. Initiating Power Cycle...")
             CyclePlug()
-            
-            print("Waiting 2 and a half minutes for router to reboot...")
-            time.sleep(150)
+            times_cycled += 1
+            print("Waiting 3 and a half minutes for router to reboot...")
+            time.sleep(210)
 
     except Exception as e:
         print(f"Unexpected Error: {e}")
